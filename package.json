@@ -6,6 +6,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "prisma generate",
+    "start": "prisma db push && tsx src/server.ts",
     "dev": "tsx --watch src/server.ts",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",

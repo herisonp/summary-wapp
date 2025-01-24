@@ -3,14 +3,15 @@ import { mainPrompt } from "../configs/main-prompt";
 import { prisma } from "../prisma";
 import { genAI, genModel } from "../services/gemini";
 import { sendMessage } from "../services/whatsapp";
+import { getDateRange } from "../utils/get-date-range";
 
-const today = new Date().toUTCString();
-const startDate = Math.floor(new Date(today).setHours(0, 0, 0, 0) / 1000);
-const endDate = Math.floor(new Date(today).setHours(23, 59, 59, 999) / 1000);
+const { startDate, endDate } = getDateRange();
 
 export const summary = async ({ groupId }: { groupId: string }) => {
   // TODO: criar regra para não permitir excesso de requisição por dia
-  const TwoHoursAgo = new Date(Date.now() - intervalSummary);
+  const TwoHoursAgo = new Date(
+    new Date(Date.now() - intervalSummary).toUTCString()
+  );
   const historic = await prisma.shippingLog.findFirst({
     where: {
       AND: {

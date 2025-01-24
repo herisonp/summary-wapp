@@ -15,8 +15,8 @@ services:
       - 5555:5555
     env_file:
       - ./.env
-    volumes:
-      - ./.:/home/node/app
+    # volumes:
+    #   - ./.:/home/node/app
 
   evolution:
     image: atendai/evolution-api:latest

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../prisma";
+import { getDateRange } from "../utils/get-date-range";
 
 const router = Router();
 
@@ -8,9 +9,7 @@ const instanceName = process.env.EVOLUTION_INSTANCE_ID!;
 const apikey = process.env.EVOLUTION_API_KEY!;
 const groupId = "120363280834070311@g.us";
 
-const today = new Date("2025/01/23").toUTCString();
-const startDate = Math.floor(new Date(today).setHours(0, 0, 0, 0) / 1000);
-const endDate = Math.floor(new Date(today).setHours(23, 59, 59, 999) / 1000);
+const { startDate, endDate } = getDateRange();
 
 router.get("/teste", async (req, res) => {
   const body = {
@@ -79,27 +78,27 @@ router.get("/teste3", async (req, res) => {
 });
 
 // como enviar mensagens nos grupos
-router.get("/teste-4", async (req, res) => {
-  const body = {
-    text: "Olá",
-    number: groupId,
-  };
+// router.get("/teste-4", async (req, res) => {
+//   const body = {
+//     text: "Olá",
+//     number: groupId,
+//   };
 
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: apikey,
-    },
-    body: JSON.stringify(body),
-  };
+//   const options = {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       apikey: apikey,
+//     },
+//     body: JSON.stringify(body),
+//   };
 
-  const response = await fetch(
-    `${baseRoute}/message/sendText/${instanceName}`,
-    options
-  );
-  const data = await response.json();
-  res.json(data);
-});
+//   const response = await fetch(
+//     `${baseRoute}/message/sendText/${instanceName}`,
+//     options
+//   );
+//   const data = await response.json();
+//   res.json(data);
+// });
 
 export default router;
