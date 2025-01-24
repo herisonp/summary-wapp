@@ -2,13 +2,19 @@
 
 Aplicação que cria resumos do dia para auxiliar participantes de grupos de WhatsApp a se manterem atualizados sobre o que aconteceu no dia.
 
-## Requisitos
+## Evolution WhatsApp API
+
+Utilizamos a API não oficial do WhatsApp com Evolution API. Você pode conferir mais sobre ela e sua documentação [aqui](https://doc.evolution-api.com/v2/pt/get-started/introduction).
+
+## Instalação de produção
+
+### Requisitos
 
 - Docker
 - Chave API do Google Gemini
 - Node.js v20+ (Opcional)
 
-## Instalação de produção
+### Instalação
 
 1. Clone o repositório
 
