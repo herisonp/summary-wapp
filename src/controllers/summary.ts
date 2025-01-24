@@ -23,9 +23,8 @@ export const summary = async ({ groupId }: { groupId: string }) => {
     },
   });
 
-  console.log("historic", historic);
-
   if (historic && historic.summary) {
+    console.log("resumo já gerado, enviando do histórico...");
     await sendMessage({
       message: historic.summary,
       to: groupId,
@@ -36,14 +35,20 @@ export const summary = async ({ groupId }: { groupId: string }) => {
   // buscar todas as mensagens do dia
   const messages = await prisma.message.findMany({
     where: {
-      key: {
-        path: ["remoteJid"],
-        equals: groupId,
-      },
-      messageTimestamp: {
-        gte: startDate,
-        lte: endDate,
-      },
+      AND: [
+        {
+          key: {
+            path: ["remoteJid"],
+            equals: groupId,
+          },
+        },
+        {
+          messageTimestamp: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      ],
     },
     orderBy: {
       messageTimestamp: "desc",
@@ -63,7 +68,6 @@ export const summary = async ({ groupId }: { groupId: string }) => {
     responseMimeType: "text/plain",
   };
 
-  // pensar em passar 1 ou 2 históricos como padrão, para ajudar o modelo a gerar uma resposta
   const chatSession = model.startChat({
     generationConfig,
   });

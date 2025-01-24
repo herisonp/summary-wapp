@@ -11,12 +11,10 @@ RUN npm ci
 
 COPY --chown=node:node . .
 
-RUN npm run build
-
 ARG DATABASE_URL
 
 ENV NODE_ENV production
 
-USER node
+RUN npm run build
 
 CMD [ "npm", "run", "start" ]

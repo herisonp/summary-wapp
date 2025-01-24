@@ -14,11 +14,11 @@ export const webhook = async (req: Request, res: Response) => {
   const isAllowedGroup = allowedGroups.includes(groupId);
   if (isCommand && isAllowedGroup) {
     console.log("----- webhook");
-    console.log("headers", req.headers);
     console.log("body", req.body);
     console.log(message);
-    console.log("gerando resumo");
+    console.log("gerando resumo...");
     await summary({ groupId });
+    console.log("...finalizado");
   }
   res.status(200).send("OK");
 };
