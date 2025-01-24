@@ -31,23 +31,25 @@ export const summaryConfig = {
 };
 ```
 
-> OBS: Você poderá pegar os ids de `allowedGroups`, logo mais, ao executar a aplicação, na rota de `http://localhost:3001/groups`
+> OBS: Você poderá pegar os ids de `allowedGroups`, logo mais, ao executar a aplicação, na rota de `http://localhost:3000/groups`
 
 5. Inicie a aplicação com o comando `docker compose up -d`
 
 6. Acesse o manager para criar uma nova instância do seu bot
-   a. Acesse o link http://localhost:8080/manager
-   b. Faça login usando a url do servidor do manager, e em TOKEN, utilize o valor que está na chave de `AUTHENTICATION_API_KEY` do arquivo .env.evolution
-   c. Crie uma nova instância com seu número de telefone e guarde o nome da instância (não utilize espaços e caracteres especiais). No campo de token/apikey, coloque o valor de `EVOLUTION_API_KEY`do arquivo .env
-   d. Acesse a página da sua instância e autentique seu WhatsApp lendo o QR Code
-   e. Acesse o arquivo `.env` e altere o valor de `EVOLUTION_INSTANCE_ID`para o nome da instância que você criou
+
+   - a. Acesse o link http://localhost:8080/manager (Pode ser necessário esperar alguns segundos para o servidor iniciar)
+   - b. Faça login usando a url do servidor do manager, e em TOKEN, utilize o valor que está na chave de `AUTHENTICATION_API_KEY` do arquivo .env.evolution
+   - c. Crie uma nova instância com o canal `Baileys` com seu número de telefone (inclua o código do pais e DDD, por exemplo 5521999999999) e guarde o nome da instância (não utilize espaços e caracteres especiais). No campo de token, coloque o valor de `EVOLUTION_API_KEY`do arquivo .env
+   - d. Acesse a página da sua instância e autentique seu WhatsApp lendo o QR Code
+   - e. Acesse o arquivo `.env` e altere o valor de `EVOLUTION_INSTANCE_ID`para o nome da instância que você criou
+   - f. Acesse sua instância, no menu de "Eventos" clique em "Webhook". Ative o webhook, configure com a URL `http://app:3000/webhook`, ative o evento de `MESSAGES_UPSERT` e clique em salvar na parte inferior da página.
 
 7. Reinicie toda a aplicação:
 
 - Execute `docker compose down --rmi local --remove-orphans`
 - Execute `docker compose up -d --build`
 
-8. Acesse o link http://localhost:3001/groups para ver os grupos que você pode gerar resumos, pegue o id dos grupos que você quer gerar resumos e adicione no arquivo ao array `allowedGroups` no arquivo `src/summary.conf.ts`
+8. Acesse o link http://localhost:3000/groups (poderá levar vários minutos se você tiver acesso a muitos grupos no WhatsApp) para ver os grupos que você pode gerar resumos, pegue o id dos grupos que você quer gerar resumos e adicione no arquivo ao array `allowedGroups` no arquivo `src/summary.conf.ts`
 
 9. Repita o passo 7, para reiniciar a aplicação
 

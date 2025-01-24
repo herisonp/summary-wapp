@@ -20,7 +20,7 @@ services:
     #   - ./.:/home/node/app
 
   evolution:
-    image: atendai/evolution-api:latest
+    image: atendai/evolution-api:v2.2.0
     restart: always
     depends_on:
       - redis
@@ -32,7 +32,7 @@ services:
     networks:
       - evolution-net
     env_file:
-      - ./.env.evolution
+      - .env.evolution
     expose:
       - 8080
 
@@ -45,22 +45,26 @@ services:
     volumes:
       - evolution_redis:/data
     ports:
-      - 6379
+      - 6379:6379
 
   postgres:
-    image: postgres:15
+    image: postgres
     networks:
       - evolution-net
-    command: ["postgres", "-c", "max_connections=1000"]
+    command:
+      ["postgres", "-c", "max_connections=1000", "-c", "listen_addresses=*"]
     restart: always
     ports:
-      - 5432
+      - 5432:5432
     environment:
       - POSTGRES_PASSWORD=PASSWORD
       - POSTGRES_USER=user
       - POSTGRES_DB=evolution
+      - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    expose:
+      - 5432
 
 volumes:
   evolution_instances:
