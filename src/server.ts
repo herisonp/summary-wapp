@@ -1,11 +1,12 @@
 import dotenv from "dotenv";
-import express from "express";
+import express, { urlencoded } from "express";
 import routes from "./routes";
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json());
 
 app.use(routes);

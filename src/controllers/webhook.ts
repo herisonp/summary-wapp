@@ -12,10 +12,13 @@ export const webhook = async (req: Request, res: Response) => {
     (keyword) => message && message.toLowerCase() === keyword.toLowerCase()
   );
   const isAllowedGroup = allowedGroups.includes(groupId);
+  console.log("----- webhook");
+  console.log("isCommand", isCommand);
+  console.log("isAllowedGroup", isAllowedGroup);
   if (isCommand && isAllowedGroup) {
-    console.log("----- webhook");
     console.log("body", req.body);
-    console.log(message);
+    console.log("groupId", groupId);
+    console.log("message", message);
     console.log("gerando resumo...");
     await summary({ groupId, messageId });
     console.log("...finalizado");
