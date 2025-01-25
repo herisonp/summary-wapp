@@ -39,6 +39,8 @@ export const summaryConfig = {
   keywords: ["#palavra1", "#palavra2"],
   // grupos permitidos para gerar resumos
   allowedGroups: ["123456@g.us", "654321@g.us"],
+  // desabilita o histórico de mensagens, sempre gera um novo resumo
+  disable_history: false, // false por padrão
 };
 ```
 
@@ -65,3 +67,12 @@ export const summaryConfig = {
 9. Repita o passo 7, para reiniciar a aplicação
 
 10. Se você sobreviveu até aqui, parabéns! Agora faça um teste, envie sua palavra chave em um dos grupos que você configurou e veja se o resumo foi gerado. (Pode levar até 1 minuto para gerar o resumo)
+
+#### Opcional:
+
+Caso queira alterar o sticker de "Gerando resumo", siga o passo a passo:
+
+1. Gere um sticker, salve em seu computador e certifique-se da extensão ser .webp
+2. Renomeie o arquivo para "gerando-resumo.webp"
+3. Salve o arquivo na pasta `src/assets/stickers`, se for necessário, substitua o arquivo existente
+4. Reinicie a aplicação com os comandos do passo 7 da etapa de instalação acima

@@ -1,38 +1,59 @@
 import { Router } from "express";
+import { prisma } from "../prisma";
+import { getDateRange } from "../utils/get-date-range";
 
 const router = Router();
-
+const developmentDate = process.env.DEVELOPMENT_DATE;
 const baseRoute = process.env.EVOLUTION_BASE_URL!;
 const instanceName = process.env.EVOLUTION_INSTANCE_ID!;
 const apikey = process.env.EVOLUTION_API_KEY!;
-const groupId = "120363280834070311@g.us";
 
-router.get("/teste", async (req, res) => {
-  const body = {
+router.get("/messages", async (req, res) => {
+  const { group_id } = req.query;
+  const { startDate, endDate } = getDateRange(developmentDate);
+  const messages = await prisma.message.findMany({
     where: {
-      key: {
-        remoteJid: groupId,
-      },
+      AND: [
+        {
+          key: {
+            path: ["remoteJid"],
+            equals: group_id,
+          },
+        },
+        {
+          messageTimestamp: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        {
+          NOT: {
+            OR: [
+              {
+                message: {
+                  path: ["conversation"],
+                  string_starts_with: "Resumo do dia ",
+                },
+              },
+              {
+                message: {
+                  path: ["conversation"],
+                  string_starts_with: "#resumododia",
+                },
+              },
+            ],
+          },
+        },
+      ],
     },
-    page: 1,
-    offset: 0,
-  };
-
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: apikey,
+    orderBy: {
+      messageTimestamp: "desc",
     },
-    body: JSON.stringify(body),
-  };
-
-  const response = await fetch(
-    `${baseRoute}/chat/findMessages/${instanceName}?currentPage=2`,
-    options
-  );
-  const data = await response.json();
-  res.json(data);
+  });
+  res.status(200).json({
+    total: messages.length,
+    data: messages,
+  });
 });
 
 // como listar todos os grupos

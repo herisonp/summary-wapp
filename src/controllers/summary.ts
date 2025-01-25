@@ -1,14 +1,41 @@
+import path from "path";
+import { disableHistory } from "../configs/disable_history";
 import { intervalSummary } from "../configs/interval-summary";
 import { mainPrompt } from "../configs/main-prompt";
 import { prisma } from "../prisma";
 import { genAI, genModel } from "../services/gemini";
-import { sendMessage } from "../services/whatsapp";
+import { sendMessage, sendSticker } from "../services/whatsapp";
+import { fileToBase64 } from "../utils/file-to-base64";
 import { getDateRange } from "../utils/get-date-range";
 
-const { startDate, endDate } = getDateRange();
+const developmentDate = process.env.DEVELOPMENT_DATE;
+const developmentGroupId = process.env.DEVELOPMENT_GROUP_ID;
 
-export const summary = async ({ groupId }: { groupId: string }) => {
-  // TODO: criar regra para não permitir excesso de requisição por dia
+export const summary = async ({
+  groupId,
+  messageId,
+}: {
+  groupId: string;
+  messageId: string;
+}) => {
+  const { startDate, endDate } = getDateRange(developmentDate);
+
+  console.log("developmentDate", developmentDate);
+  console.log("developmentGroupId", developmentGroupId);
+  console.log("disableHistory", disableHistory);
+  console.log(
+    "startDate",
+    new Date(startDate * 1000).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    })
+  );
+  console.log(
+    "endDate",
+    new Date(endDate * 1000).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    })
+  );
+
   const TwoHoursAgo = new Date(
     new Date(Date.now() - intervalSummary).toUTCString()
   );
@@ -22,30 +49,50 @@ export const summary = async ({ groupId }: { groupId: string }) => {
       },
     },
   });
+  const hasHistoric = !!historic && !!historic.summary && !disableHistory;
 
-  if (historic && historic.summary) {
+  if (hasHistoric) {
     console.log("resumo já gerado, enviando do histórico...");
     await sendMessage({
-      message: historic.summary,
+      message: historic.summary!,
       to: groupId,
+      quotedId: messageId,
     });
     return;
   }
 
-  // buscar todas as mensagens do dia
+  console.log("Buscando mensagens...");
   const messages = await prisma.message.findMany({
     where: {
       AND: [
         {
           key: {
             path: ["remoteJid"],
-            equals: groupId,
+            equals: developmentGroupId || groupId,
           },
         },
         {
           messageTimestamp: {
             gte: startDate,
             lte: endDate,
+          },
+        },
+        {
+          NOT: {
+            OR: [
+              {
+                message: {
+                  path: ["conversation"],
+                  string_starts_with: "Resumo do dia ",
+                },
+              },
+              {
+                message: {
+                  path: ["conversation"],
+                  string_starts_with: "#resumododia",
+                },
+              },
+            ],
           },
         },
       ],
@@ -72,21 +119,42 @@ export const summary = async ({ groupId }: { groupId: string }) => {
     generationConfig,
   });
 
-  const result = await chatSession.sendMessage(JSON.stringify(messages));
+  try {
+    const stickerPath = path.resolve(
+      __dirname,
+      "../assets/stickers/gerando-resumo.webp"
+    );
+    const sticker = await fileToBase64(stickerPath);
+    const responseSticker = await sendSticker({
+      sticker,
+      to: groupId,
+      quotedId: messageId,
+    });
+    console.log("resposta do sticker", responseSticker);
+    console.log("Enviando mensagens para o modelo...");
+    const result = await chatSession.sendMessage(JSON.stringify(messages));
 
-  const summaryText = result.response.text();
+    console.log("Resumo gerado pelo modelo...");
+    const summaryText = result.response.text();
 
-  await prisma.shippingLog.create({
-    data: {
-      groupId,
-      summary: summaryText,
-    },
-  });
+    console.log("Salvando no banco de dados...");
+    await prisma.shippingLog.create({
+      data: {
+        groupId,
+        summary: summaryText,
+      },
+    });
 
-  await sendMessage({
-    message: summaryText,
-    to: groupId,
-  });
+    console.log("Enviando para o grupo...");
+    await sendMessage({
+      message: summaryText,
+      to: groupId,
+      quotedId: messageId,
+    });
 
-  return;
+    return;
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 };
