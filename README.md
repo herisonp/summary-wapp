@@ -8,6 +8,9 @@ Utilizamos a API não oficial do WhatsApp com Evolution API. Você pode conferir
 
 ## Instalação de produção
 
+### Video tutorial
+
+Se preferir, você pode assistir ao vídeo abaixo para ver como instalar a aplicação em produção.
 [![Video tutorial de instalação de produção](https://img.youtube.com/vi/iNjX2ZG35gk/0.jpg)](https://youtu.be/iNjX2ZG35gk)
 
 ### Requisitos
