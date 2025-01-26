@@ -7,6 +7,7 @@ import { genAI, genModel } from "../services/gemini";
 import { sendMessage, sendSticker } from "../services/whatsapp";
 import { fileToBase64 } from "../utils/file-to-base64";
 import { getDateRange } from "../utils/get-date-range";
+import { getMessages } from "../services/messages";
 
 const developmentDate = process.env.DEVELOPMENT_DATE;
 const developmentGroupId = process.env.DEVELOPMENT_GROUP_ID;
@@ -19,118 +20,118 @@ export const summary = async ({
   messageId: string;
 }) => {
   const { startDate, endDate } = getDateRange(developmentDate);
-
-  console.log("developmentDate", developmentDate);
-  console.log("developmentGroupId", developmentGroupId);
-  console.log("disableHistory", disableHistory);
-  console.log(
-    "startDate",
-    new Date(startDate * 1000).toLocaleString("pt-BR", {
+  console.log({
+    developmentDate,
+    developmentGroupId,
+    disableHistory,
+    startDate: new Date(startDate * 1000).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
-    })
-  );
-  console.log(
-    "endDate",
-    new Date(endDate * 1000).toLocaleString("pt-BR", {
+    }),
+    endDate: new Date(endDate * 1000).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
-    })
-  );
-
-  const TwoHoursAgo = new Date(
-    new Date(Date.now() - intervalSummary).toUTCString()
-  );
-  const historic = await prisma.shippingLog.findFirst({
-    where: {
-      AND: {
-        groupId,
-        createdAt: {
-          gte: TwoHoursAgo,
+    }),
+  });
+  try {
+    const TwoHoursAgo = new Date(
+      new Date(Date.now() - intervalSummary).toUTCString()
+    );
+    const historic = await prisma.shippingLog.findFirst({
+      where: {
+        AND: {
+          groupId,
+          createdAt: {
+            gte: TwoHoursAgo,
+          },
         },
       },
-    },
-  });
-  const hasHistoric = !!historic && !!historic.summary && !disableHistory;
-
-  if (hasHistoric) {
-    console.log("resumo já gerado, enviando do histórico...");
-    await sendMessage({
-      message: historic.summary!,
-      to: groupId,
-      quotedId: messageId,
     });
-    return;
-  }
+    const hasHistoric = !!historic && !!historic.summary && !disableHistory;
 
-  console.log("Buscando mensagens...");
-  const messages = await prisma.message.findMany({
-    where: {
-      AND: [
-        {
-          key: {
-            path: ["remoteJid"],
-            equals: developmentGroupId || groupId,
-          },
-        },
-        {
-          messageTimestamp: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        {
-          NOT: {
-            OR: [
-              {
-                message: {
-                  path: ["conversation"],
-                  string_starts_with: "Resumo do dia ",
-                },
-              },
-              {
-                message: {
-                  path: ["conversation"],
-                  string_starts_with: "#resumododia",
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-    orderBy: {
-      messageTimestamp: "desc",
-    },
-  });
+    if (hasHistoric) {
+      console.log("resumo já gerado, enviando do histórico...");
+      await sendMessage({
+        message: historic.summary!,
+        to: groupId,
+        quotedId: messageId,
+      });
+      return;
+    }
 
-  const model = genAI.getGenerativeModel({
-    model: genModel,
-    systemInstruction: mainPrompt,
-  });
-
-  const generationConfig = {
-    temperature: 0.8,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 8192,
-    responseMimeType: "text/plain",
-  };
-
-  const chatSession = model.startChat({
-    generationConfig,
-  });
-
-  try {
+    console.log("Avisa o grupo que está gerando o resumo...");
     const stickerPath = path.resolve(
       __dirname,
       "../assets/stickers/gerando-resumo.webp"
     );
     const sticker = await fileToBase64(stickerPath);
-    const responseSticker = await sendSticker({
+    await sendSticker({
       sticker,
       to: groupId,
       quotedId: messageId,
     });
-    console.log("resposta do sticker", responseSticker);
+
+    const summaryText = await generateSummary({ groupId });
+
+    console.log("Enviando para o grupo...");
+    await sendMessage({
+      message:
+        summaryText ||
+        "> Não foi possível gerar o resumo. Não existem mensagens suficiente ou algum problema aconteceu no servidor. Você sabe o que houve? Se souber, ajuda aí, pô 👍. Se não, tente novamente mais tarde. 🐎",
+      to: groupId,
+      quotedId: messageId,
+    });
+
+    if (!summaryText) {
+      const stickerPath = path.resolve(
+        __dirname,
+        "../assets/stickers/fala-mula.webp"
+      );
+      const sticker = await fileToBase64(stickerPath);
+      await sendSticker({
+        sticker,
+        to: groupId,
+        quotedId: messageId,
+      });
+    }
+
+    return;
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+};
+
+export const generateSummary = async ({ groupId }: { groupId: string }) => {
+  const { startDate, endDate } = getDateRange(developmentDate);
+  try {
+    console.log("Buscando mensagens...");
+    const messages = await getMessages({
+      groupId,
+      startDate,
+      endDate,
+    });
+
+    if (messages.length === 0) {
+      console.log("Nenhuma mensagem encontrada.");
+      return;
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: genModel,
+      systemInstruction: mainPrompt,
+    });
+
+    const generationConfig = {
+      temperature: 0.8,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+      responseMimeType: "text/plain",
+    };
+
+    const chatSession = model.startChat({
+      generationConfig,
+    });
+
     console.log("Enviando mensagens para o modelo...");
     const result = await chatSession.sendMessage(JSON.stringify(messages));
 
@@ -145,14 +146,7 @@ export const summary = async ({
       },
     });
 
-    console.log("Enviando para o grupo...");
-    await sendMessage({
-      message: summaryText,
-      to: groupId,
-      quotedId: messageId,
-    });
-
-    return;
+    return summaryText;
   } catch (error) {
     console.log(error);
     return;

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "../prisma";
 import { getDateRange } from "../utils/get-date-range";
+import { getMessages } from "../services/messages";
 
 const router = Router();
 const developmentDate = process.env.DEVELOPMENT_DATE;
@@ -10,45 +10,19 @@ const apikey = process.env.EVOLUTION_API_KEY!;
 
 router.get("/messages", async (req, res) => {
   const { group_id } = req.query;
+
+  if (!group_id) {
+    res.status(400).json({
+      message: "group_id is required",
+    });
+  }
+
   const { startDate, endDate } = getDateRange(developmentDate);
-  const messages = await prisma.message.findMany({
-    where: {
-      AND: [
-        {
-          key: {
-            path: ["remoteJid"],
-            equals: group_id,
-          },
-        },
-        {
-          messageTimestamp: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        {
-          NOT: {
-            OR: [
-              {
-                message: {
-                  path: ["conversation"],
-                  string_starts_with: "Resumo do dia ",
-                },
-              },
-              {
-                message: {
-                  path: ["conversation"],
-                  string_starts_with: "#resumododia",
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-    orderBy: {
-      messageTimestamp: "desc",
-    },
+
+  const messages = await getMessages({
+    groupId: group_id as string,
+    startDate,
+    endDate,
   });
   res.status(200).json({
     total: messages.length,
