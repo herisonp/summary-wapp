@@ -51,6 +51,7 @@ export const sendMessage = async ({
   const body = {
     text: message,
     number: to,
+    linkPreview: true,
     ...(quotedId ? { quoted: { key: { id: quotedId } } } : {}),
   };
 

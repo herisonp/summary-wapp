@@ -1,13 +1,13 @@
 import path from "path";
 import { disableHistory } from "../configs/disable_history";
 import { intervalSummary } from "../configs/interval-summary";
-import { mainPrompt } from "../configs/main-prompt";
 import { prisma } from "../prisma";
 import { genAI, genModel } from "../services/gemini";
 import { sendMessage, sendSticker } from "../services/whatsapp";
 import { fileToBase64 } from "../utils/file-to-base64";
 import { getDateRange } from "../utils/get-date-range";
 import { getMessages } from "../services/messages";
+import { generatePrompt } from "../utils/generate-prompt";
 
 const developmentDate = process.env.DEVELOPMENT_DATE;
 const developmentGroupId = process.env.DEVELOPMENT_GROUP_ID;
@@ -115,9 +115,15 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
       return;
     }
 
+    const dateFormatted = new Date(
+      new Date(endDate * 1000).toUTCString()
+    ).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    });
+    const context = `[DATA E HORA ATUAL]: ${dateFormatted}`;
     const model = genAI.getGenerativeModel({
       model: genModel,
-      systemInstruction: mainPrompt,
+      systemInstruction: generatePrompt({ name: "main", context }),
     });
 
     const generationConfig = {
