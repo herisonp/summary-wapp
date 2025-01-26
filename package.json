@@ -13,7 +13,9 @@
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down --rmi local --remove-orphans",
-    "docker:app": "docker compose exec -it app bash"
+    "docker:app": "docker compose exec -it app bash",
+    "docker:logs:app": "docker compose logs -f -t --since 5m app",
+    "docker:logs": "docker compose logs -f -t --since 5m"
   },
   "keywords": [],
   "author": "",
