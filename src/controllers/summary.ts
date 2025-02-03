@@ -104,7 +104,7 @@ export const summary = async ({
 export const generateSummary = async ({ groupId }: { groupId: string }) => {
   const { startDate, endDate } = getDateRange(developmentDate);
   try {
-    console.log("Buscando mensagens...");
+    console.log(groupId, "Buscando mensagens...");
     const messages = await getMessages({
       groupId,
       startDate,
@@ -113,7 +113,7 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
 
     // Verifica se existem mensagens suficientes para gerar o resumo
     if (messages.length < 4) {
-      console.log("Nenhuma mensagem encontrada.");
+      console.log(groupId, "Nenhuma mensagem encontrada.");
       return;
     }
 
@@ -140,13 +140,13 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
       generationConfig,
     });
 
-    console.log("Enviando mensagens para o modelo...");
+    console.log(groupId, "Enviando mensagens para o modelo...");
     const result = await chatSession.sendMessage(JSON.stringify(messages));
 
-    console.log("Resumo gerado pelo modelo...");
+    console.log(groupId, "Resumo gerado pelo modelo...");
     const summaryText = result.response.text();
 
-    console.log("Salvando no banco de dados...");
+    console.log(groupId, "Salvando no banco de dados...");
     await prisma.shippingLog.create({
       data: {
         groupId,
@@ -156,7 +156,7 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
 
     return summaryText;
   } catch (error) {
-    console.log(error);
+    console.log(groupId, error);
     return;
   }
 };
@@ -211,4 +211,78 @@ export const sendSummary = async ({ groupId }: { groupId: string }) => {
     });
   }
   return;
+};
+
+export const sendSummaryOnCron = async ({ groupId }: { groupId: string }) => {
+  try {
+    const TwoHoursAgo = new Date(
+      new Date(Date.now() - intervalSummary).toUTCString()
+    );
+
+    const historic = await prisma.shippingLog.findFirst({
+      where: {
+        AND: {
+          groupId,
+          createdAt: {
+            gte: TwoHoursAgo,
+          },
+        },
+      },
+    });
+
+    const hasHistoric = !!historic && !!historic.summary;
+
+    if (hasHistoric) {
+      console.log(groupId, "Resumo já enviado.");
+      return;
+    }
+
+    const summaryText = await generateSummary({ groupId });
+
+    if (!summaryText) {
+      return;
+    }
+
+    console.log(groupId, "Enviando para o grupo...");
+    const message = await sendMessage({
+      message: summaryText,
+      to: groupId,
+    });
+
+    if (!message) {
+      console.log(groupId, "Não foi possível enviar o resumo.");
+      return;
+    }
+
+    const stickerPath = path.resolve(
+      __dirname,
+      "../assets/stickers/fala-mula.webp"
+    );
+    const sticker = await fileToBase64(stickerPath);
+    await sendSticker({
+      sticker,
+      to: groupId,
+      quotedId: message.key.id,
+    });
+    console.log(groupId, "Resumo enviado com sucesso!");
+
+    if (phoneToLogger) {
+      console.log(groupId, "Enviando logger");
+      const logger = {
+        now: new Date(Date.now()).toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+        }),
+        groupId,
+        summary: summaryText,
+      };
+      await sendMessage({
+        message: `${JSON.stringify(logger)}`,
+        to: phoneToLogger,
+      });
+    }
+    return;
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 };

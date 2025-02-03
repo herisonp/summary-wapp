@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { allowedGroups } from "../configs/allowed-groups";
-import { generateSummary, sendSummary } from "./summary";
+import { sendSummaryOnCron } from "./summary";
 import { timeRangeToHibernate } from "../configs/time-range-to-hibertante";
 
 export const cron = async (req: Request, res: Response) => {
@@ -28,14 +28,7 @@ export const cron = async (req: Request, res: Response) => {
 
   await Promise.all(
     allowedGroups.map(async (groupId) => {
-      await generateSummary({ groupId });
-      console.log("Gerado para:", groupId);
-    })
-  );
-  await Promise.all(
-    allowedGroups.map(async (groupId) => {
-      await sendSummary({ groupId });
-      console.log("Enviado para:", groupId);
+      await sendSummaryOnCron({ groupId });
     })
   );
   console.log("Cron job executado!");

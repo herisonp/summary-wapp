@@ -1,9 +1,7 @@
 import { CronJob } from "cron";
 
-// "0 */2 * * *", 2 hours
-// "*/2 * * * * *", 2 seconds
 export const job = new CronJob(
-  "0 */2 * * *",
+  "*/5 * * * *", // every 5 minutes
   () => {
     console.log("Running Cron Job");
     fetch("http://localhost:3000/cron");
