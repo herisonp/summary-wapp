@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getDateRange } from "../utils/get-date-range";
 import { getMessages } from "../services/messages";
 import { queryExternalDb } from "../services/evolution-db";
+import { prisma } from "../prisma";
 
 const router = Router();
 const developmentDate = process.env.DEVELOPMENT_DATE;
@@ -54,6 +55,29 @@ router.get("/messages-sql", async (req, res) => {
   const values = [groupId, startDate, endDate];
   const data = await queryExternalDb(query, values);
   res.json(data);
+});
+
+router.get("/summary/last", async (req, res) => {
+  const { group_id } = req.query;
+  const groupId = group_id as string;
+  const summary = await prisma.shippingLog.findFirst({
+    where: {
+      groupId: groupId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  if (!summary || !summary.createdAt) {
+    return;
+  }
+  res.json({
+    ...summary,
+    createdAtBr: summary?.createdAt?.toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    }),
+  });
+  return;
 });
 
 // como listar todos os grupos
