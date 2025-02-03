@@ -29,9 +29,6 @@ yarn-error.log*
 prisma/dev.db
 prisma/dev.db-journal
 
-# Arquivos gerados pelo Prisma
-prisma/migrations/
-
 # Arquivos temporários do sistema
 *.tmp
 *.temp
