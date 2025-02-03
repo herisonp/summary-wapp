@@ -8,6 +8,7 @@ import { fileToBase64 } from "../utils/file-to-base64";
 import { getDateRange } from "../utils/get-date-range";
 import { getMessages } from "../services/messages";
 import { generatePrompt } from "../utils/generate-prompt";
+import { phoneToLogger } from "../configs/phone-to-logger";
 
 const developmentDate = process.env.DEVELOPMENT_DATE;
 const developmentGroupId = process.env.DEVELOPMENT_GROUP_ID;
@@ -177,29 +178,37 @@ export const sendSummary = async ({ groupId }: { groupId: string }) => {
   }
 
   if (lastSummary.createdAt! > TwoHoursAgo) {
-    console.log("Resumo já enviado há menos de 2 horas.");
+    console.log("Não tem resumo novo...");
     return;
   }
 
-  console.log({
+  const logger = {
     now: new Date(now).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
     }),
     TwoHoursAgo: new Date(TwoHoursAgo).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
     }),
-    lastSummary: {
+    summary: {
       ...lastSummary,
       createdAt: new Date(lastSummary.createdAt!).toLocaleString("pt-BR", {
         timeZone: "America/Sao_Paulo",
       }),
     },
-  });
+  };
 
   console.log("Enviando para o grupo...");
   await sendMessage({
     message: lastSummary.summary,
     to: groupId,
   });
+
+  console.log(logger);
+  if (phoneToLogger) {
+    await sendMessage({
+      message: JSON.stringify(logger),
+      to: phoneToLogger,
+    });
+  }
   return;
 };

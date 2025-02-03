@@ -17,10 +17,10 @@ services:
       - ./.env
     volumes:
       - ./src/summary.conf.ts:/home/node/app/src/summary.conf.ts
-    #   - ./.:/home/node/app
+      # - ./.:/home/node/app
 
   evolution:
-    image: atendai/evolution-api:v2.2.0
+    image: atendai/evolution-api:v2.2.1
     restart: always
     depends_on:
       - redis
@@ -42,10 +42,11 @@ services:
       - evolution-net
     command: >
       redis-server --port 6379 --appendonly yes
+    restart: always
     volumes:
       - evolution_redis:/data
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
 
   postgres:
     image: postgres
@@ -59,7 +60,6 @@ services:
     environment:
       - POSTGRES_PASSWORD=PASSWORD
       - POSTGRES_USER=user
-      - POSTGRES_DB=evolution
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
