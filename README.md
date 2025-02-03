@@ -39,6 +39,11 @@ export const summaryConfig = {
   keywords: ["#palavra1", "#palavra2"],
   // grupos permitidos para gerar resumos
   allowedGroups: ["123456@g.us", "654321@g.us"],
+  // horários para hibernar o bot
+  timeRangeToHibernate: {
+    start: "03:00",
+    end: "08:00",
+  },
   // desabilita o histórico de mensagens, sempre gera um novo resumo
   disable_history: false, // false por padrão
 };

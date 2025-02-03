@@ -8,17 +8,21 @@ export const webhook = async (req: Request, res: Response) => {
   const groupId = data.key.remoteJid;
   const messageId = data.key.id;
   const message = data.message?.conversation as string;
+  const pushName = data.pushName;
   const isCommand = keywords.some(
     (keyword) => message && message.toLowerCase() === keyword.toLowerCase()
   );
   const isAllowedGroup = allowedGroups.includes(groupId);
   console.log("----- webhook");
-  console.log("isCommand", isCommand);
-  console.log("isAllowedGroup", isAllowedGroup);
+  console.log({
+    body: req.body,
+    isCommand,
+    isAllowedGroup,
+    message,
+    pushName,
+    groupId,
+  });
   if (isCommand && isAllowedGroup) {
-    console.log("body", req.body);
-    console.log("groupId", groupId);
-    console.log("message", message);
     console.log("gerando resumo...");
     await summary({ groupId, messageId });
     console.log("...finalizado");

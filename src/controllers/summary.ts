@@ -110,7 +110,8 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
       endDate,
     });
 
-    if (messages.length === 0) {
+    // Verifica se existem mensagens suficientes para gerar o resumo
+    if (messages.length < 4) {
       console.log("Nenhuma mensagem encontrada.");
       return;
     }
@@ -157,4 +158,48 @@ export const generateSummary = async ({ groupId }: { groupId: string }) => {
     console.log(error);
     return;
   }
+};
+
+export const sendSummary = async ({ groupId }: { groupId: string }) => {
+  const now = Date.now();
+  const TwoHoursAgo = new Date(new Date(now - intervalSummary).toUTCString());
+  const lastSummary = await prisma.shippingLog.findFirst({
+    where: {
+      groupId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  if (!lastSummary || !lastSummary.summary) {
+    console.log("Resumo não encontrado ou está vazio.");
+    return;
+  }
+
+  if (lastSummary.createdAt! > TwoHoursAgo) {
+    console.log("Resumo já enviado há menos de 2 horas.");
+    return;
+  }
+
+  console.log({
+    now: new Date(now).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    }),
+    TwoHoursAgo: new Date(TwoHoursAgo).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    }),
+    lastSummary: {
+      ...lastSummary,
+      createdAt: new Date(lastSummary.createdAt!).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      }),
+    },
+  });
+
+  console.log("Enviando para o grupo...");
+  await sendMessage({
+    message: lastSummary.summary,
+    to: groupId,
+  });
+  return;
 };
